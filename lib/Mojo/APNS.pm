@@ -51,17 +51,6 @@ our $VERSION = '0.01';
 Emitted when an error occur between client and server. This event will also
 get "Timeout" events.
 
-Internal errors:
-
-=over 4
-
-=item * Too long message ($length)
-
-This is emitted if the total payload (not just the message) is longer than 256
-characters.
-
-=back
-
 =head2 drain
 
 Emitted once all messages have been sent to the server.
@@ -105,8 +94,14 @@ sub _json { state $json = Mojo::JSON->new }
 =head2 send
 
   $self->send($device, $message, %args);
+  $self->send($device, $message, %args, $cb);
 
 Will send a C<$message> to the C<$device>. C<%args> is optional, but can contain:
+
+C<$cb> will be called when the messsage has been sent or if it could not be
+sent. C<$error> will be false on success.
+
+    $cb->($self, $error);
 
 =over 4
 
@@ -125,6 +120,7 @@ Default is "default".
 =cut
 
 sub send {
+  my $cb = ref $_[-1] eq 'CODE' ? pop : \&_default_handler;
   my($self, $device_token, $message, %args) = @_;
   my $data = {};
 
@@ -144,12 +140,13 @@ sub send {
 
   if(length $message > 256) {
     my $length = length $message;
-    return $self->emit(error => "Too long message ($length)")
+    return $self->$cb("Too long message ($length)");
   }
 
   $device_token =~ s/\s//g;
   warn "[APNS:$device_token] <<< $message\n" if DEBUG;
 
+  $self->once(drain => sub { $self->$cb('') });
   $self->_write([
     chr(0),
     pack('n', 32),
@@ -185,6 +182,10 @@ sub _connect {
           $self->_write(shift @{ $self->{messages} });
         },
       );
+}
+
+sub _default_handler {
+  $_[0]->emit(error => $_[1]) if $_[1];
 }
 
 sub _write {

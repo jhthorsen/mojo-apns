@@ -40,6 +40,19 @@ $apns->on(error => sub { diag "ERROR: $_[1]"; $_[0]->ioloop->stop; });
 
 $apns->send(
   "c9d4a07c fbbc21d6 ef87a47d 53e16983 1096a5d5 faa15b75 56f59ddd a715dff4",
+  "tooooooooooooooooooooooooooooooooooooooooooooooooo looooooooooooooooooooooooooooong meeeeeeeeeeeeeeeeeeeeeesssssssssssssssssssssaaaaaaaaaaaaaaaaaaaaaaaaaaaage",
+  badge => 2000000000000000,
+  other => 'stuff',
+  also => 'takes up',
+  length => 1234567890,
+  sub {
+    my($apns, $error) = @_;
+    like $error, qr{too long}i, 'got too long message error';
+  },
+);
+
+$apns->send(
+  "c9d4a07c fbbc21d6 ef87a47d 53e16983 1096a5d5 faa15b75 56f59ddd a715dff4",
   "New cool stuff!",
   badge => 2,
 );
