@@ -1,4 +1,4 @@
 Revision history for Mojo-APNS
 
-0.01
+0.01     Mon Jun 10 22:25:44 2013
        * Can send() messages to APNS
