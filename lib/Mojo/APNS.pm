@@ -36,13 +36,13 @@ This module does not support password protected SSL keys.
 
 =cut
 
+use feature 'state';
 use Mojo::Base 'Mojo::EventEmitter';
 use Mojo::JSON;
 use Mojo::IOLoop;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
 our $VERSION = '0.01';
-my $JSON = Mojo::JSON->new;
 
 =head1 EVENTS
 
@@ -65,10 +65,6 @@ characters.
 =head2 drain
 
 Emitted once all messages have been sent to the server.
-
-=head2 sent
-
-Emitted once a message has been sent.
 
 =head1 ATTRIBUTES
 
@@ -102,6 +98,7 @@ has _gateway_address => sub {
 };
 
 sub _address { "$_[0]->{_gateway_address}:$_[0]->{_gateway_port}" } # DEBUG
+sub _json { state $json = Mojo::JSON->new }
 
 =head1 METHODS
 
@@ -143,7 +140,7 @@ sub send {
     $data->{custom} = \%args;
   }
 
-  $message = $JSON->encode($data);
+  $message = $self->_json->encode($data);
 
   if(length $message > 256) {
     my $length = length $message;
@@ -197,7 +194,6 @@ sub _write {
 
   if($self->{stream}) {
     $self->{stream}->write(join '', @$message);
-    $self->emit(sent => $message);
   }
   else {
     push @{ $self->{messages} }, $message;
