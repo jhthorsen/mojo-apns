@@ -6,7 +6,7 @@ Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 DESCRIPTION
 
@@ -42,7 +42,7 @@ use Mojo::JSON;
 use Mojo::IOLoop;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 EVENTS
 

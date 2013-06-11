@@ -2,7 +2,7 @@ NAME
     Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 VERSION
-    0.01
+    0.02
 
 DESCRIPTION
     This module provides an API for sending messages to an iPhone using
@@ -33,13 +33,6 @@ EVENTS
     Emitted when an error occur between client and server. This event will
     also get "Timeout" events.
 
-    Internal errors:
-
-    *   Too long message ($length)
-
-        This is emitted if the total payload (not just the message) is
-        longer than 256 characters.
-
   drain
     Emitted once all messages have been sent to the server.
 
@@ -60,8 +53,14 @@ ATTRIBUTES
 METHODS
   send
       $self->send($device, $message, %args);
+      $self->send($device, $message, %args, $cb);
 
     Will send a $message to the $device. %args is optional, but can contain:
+
+    $cb will be called when the messsage has been sent or if it could not be
+    sent. $error will be false on success.
+
+        $cb->($self, $error);
 
     *   badge
 
