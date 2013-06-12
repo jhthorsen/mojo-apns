@@ -48,8 +48,7 @@ our $VERSION = '0.02';
 
 =head2 error
 
-Emitted when an error occur between client and server. This event will also
-get "Timeout" events.
+Emitted when an error occur between client and server.
 
 =head2 drain
 
@@ -180,7 +179,7 @@ sub _connect {
           $stream->on(close => sub { delete $self->{$_} for qw/ client_id stream / });
           $stream->on(error => sub { $self->emit(error => $_[1]) });
           $stream->on(drain => sub { @{ $self->{messages} } or $self->emit('drain'); });
-          $stream->on(timeout => sub { $self->emit(error => 'Timeout') });
+          $stream->on(timeout => sub { delete $self->{$_} for qw/ client_id stream / });
           $self->_write(shift @{ $self->{messages} });
         },
       );
