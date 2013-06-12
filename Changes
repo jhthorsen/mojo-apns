@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.0201
+       * Fix Use of uninitialized value in concatenation
+
 0.02     Tue Jun 11 08:10:19 2013
        * Fix errors from send() can be received in callback
 

@@ -86,7 +86,6 @@ has _gateway_address => sub {
   $_[0]->sandbox ? 'gateway.sandbox.push.apple.com' : 'gateway.push.apple.com'
 };
 
-sub _address { "$_[0]->{_gateway_address}:$_[0]->{_gateway_port}" } # DEBUG
 sub _json { state $json = Mojo::JSON->new }
 
 =head1 METHODS
@@ -159,8 +158,11 @@ sub send {
 sub _connect {
   my $self = shift;
 
-  warn "[APNS:@{[$self->_address]}] <<< cert=@{[$self->cert]}\n" if DEBUG;
-  warn "[APNS:@{[$self->_address]}] <<< key=@{[$self->key]}\n" if DEBUG;
+  if(DEBUG) {
+    my $key = join ':', $self->_gateway_address, $self->_gateway_port;
+    warn "[APNS:$key] <<< cert=@{[$self->cert]}\n" if DEBUG;
+    warn "[APNS:$key] <<< key=@{[$self->key]}\n" if DEBUG;
+  }
 
   Scalar::Util::weaken($self);
   $self->{client_id}
