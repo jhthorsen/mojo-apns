@@ -30,11 +30,27 @@ SYNOPSIS
 
 EVENTS
   error
-    Emitted when an error occur between client and server. This event will
-    also get "Timeout" events.
+    Emitted when an error occur between client and server.
 
   drain
     Emitted once all messages have been sent to the server.
+
+  feedback
+      $self->on(feedback => sub {
+        my($self, $data) = @_;
+      });
+
+    This event is emitted once a device has rejected a notification. $data
+    is a hash-ref:
+
+      {
+        ts => $epoch_timestamp,
+        device => $device_token,
+      }
+
+    Once you start listening to "feedback" events, a connection will be made
+    to Apple's push notification server which will then send data to this
+    callback.
 
 ATTRIBUTES
   cert
@@ -51,6 +67,10 @@ ATTRIBUTES
     Holds a Mojo::IOLoop object.
 
 METHODS
+  on
+    Same as "on" in Mojo::EventEmitter, but will also set up feedback
+    connection if the event is "feedback".
+
   send
       $self->send($device, $message, %args);
       $self->send($device, $message, %args, $cb);
