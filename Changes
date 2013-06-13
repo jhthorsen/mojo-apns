@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.03
+       * Add support for listening to feedback from APNS
+
 0.0201
        * Fix Use of uninitialized value in concatenation
        * Fix clearing client_id stream on timeout

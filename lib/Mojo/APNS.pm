@@ -54,6 +54,23 @@ Emitted when an error occur between client and server.
 
 Emitted once all messages have been sent to the server.
 
+=head2 feedback
+
+  $self->on(feedback => sub {
+    my($self, $data) = @_;
+  });
+
+This event is emitted once a device has rejected a notification. C<$data> is a
+hash-ref:
+
+  {
+    ts => $epoch_timestamp,
+    device => $device_token,
+  }
+
+Once you start listening to "feedback" events, a connection will be made to
+Apple's push notification server which will then send data to this callback.
+
 =head1 ATTRIBUTES
 
 =head2 cert
@@ -80,6 +97,7 @@ has cert => '';
 has sandbox => 0;
 
 has ioloop => sub { Mojo::IOLoop->singleton };
+has _feedback_port => 2196;
 has _gateway_port => 2195;
 has _gateway_address => sub {
   $_[0]->sandbox ? 'gateway.sandbox.push.apple.com' : 'gateway.push.apple.com'
@@ -88,6 +106,38 @@ has _gateway_address => sub {
 sub _json { state $json = Mojo::JSON->new }
 
 =head1 METHODS
+
+=head2 on
+
+Same as L<Mojo::EventEmitter/on>, but will also set up feedback connection if
+the event is L</feedback>.
+
+=cut
+
+sub on {
+  my($self, $event, @args) = @_;
+
+  if($event eq 'feedback' and !$self->{feedback_id}) {
+    $self->_connect(feedback => sub {
+      $_[1]->on(read => $self->_feedback_reader_cb);
+    });
+  }
+
+  $self->SUPER::on($event => @args);
+}
+
+sub _feedback_reader_cb {
+  my $self = shift;
+  my $buffer = '';
+  my($ts, $device);
+
+  sub {
+    $buffer .= $_[1];
+    ($ts, $device, $buffer) = unpack 'N n/a a*', $buffer;
+    warn "[APNS:$device] >>> $ts\n" if DEBUG;
+    $self->emit(feedback => { ts => $ts, device => $device });
+  };
+}
 
 =head2 send
 
@@ -155,32 +205,34 @@ sub send {
 }
 
 sub _connect {
-  my $self = shift;
+  my($self, $type, $cb) = @_;
+  my $port = $type eq 'gateway' ? $self->_gateway_port : $self->_feedback_port;
+  my @cleanup = map { "${type}_$_" } qw/ id stream /;
 
   if(DEBUG) {
-    my $key = join ':', $self->_gateway_address, $self->_gateway_port;
+    my $key = join ':', $self->_gateway_address, $port;
     warn "[APNS:$key] <<< cert=@{[$self->cert]}\n" if DEBUG;
     warn "[APNS:$key] <<< key=@{[$self->key]}\n" if DEBUG;
   }
 
   Scalar::Util::weaken($self);
-  $self->{client_id}
+  $self->{$cleanup[0]}
     ||= $self->ioloop->client(
         address => $self->_gateway_address,
-        port => $self->_gateway_port,
+        port => $port,
         tls => 1,
         tls_cert => $self->cert,
         tls_key => $self->key,
         sub {
           my($ioloop, $error, $stream) = @_;
 
-          $error and return $self->emit(error => $error);
-          $self->{stream} = $stream;
-          $stream->on(close => sub { delete $self->{$_} for qw/ client_id stream / });
-          $stream->on(error => sub { $self->emit(error => $_[1]) });
-          $stream->on(drain => sub { @{ $self->{messages} } or $self->emit('drain'); });
-          $stream->on(timeout => sub { delete $self->{$_} for qw/ client_id stream / });
-          $self->_write(shift @{ $self->{messages} });
+          $error and return $self->emit(error => "$type: $error");
+          $self->{$cleanup[1]} = $stream;
+          $stream->on(close => sub { delete $self->{$_} for @cleanup });
+          $stream->on(error => sub { $self->emit(error => "$type: $_[1]") });
+          $stream->on(drain => sub { $self->emit('drain'); });
+          $stream->on(timeout => sub { delete $self->{$_} for @cleanup });
+          $self->$cb($stream);
         },
       );
 }
@@ -192,14 +244,11 @@ sub _default_handler {
 sub _write {
   my($self, $message) = @_;
 
-  $self->{messages} ||= [];
-
-  if($self->{stream}) {
-    $self->{stream}->write(join '', @$message);
+  if($self->{gateway_stream}) {
+    $self->{gateway_stream}->write(join '', @$message);
   }
   else {
-    push @{ $self->{messages} }, $message;
-    $self->_connect unless $self->{client_id};
+    $self->_connect(gateway => sub { shift->_write($message) }) unless $self->{gateway_id};
   }
 
   $self;
@@ -207,9 +256,14 @@ sub _write {
 
 sub DESTROY {
   my $self = shift;
-  my $client_id = $self->{client_id} or return;
   my $ioloop = $self->ioloop or return;
-  $ioloop->remove($client_id);
+
+  if(my $id = $self->{gateway_id}) {
+    $ioloop->remove($id);
+  }
+  if(my $id = $self->{feedback_id}) {
+    $ioloop->remove($id);
+  }
 }
 
 =head1 AUTHOR
