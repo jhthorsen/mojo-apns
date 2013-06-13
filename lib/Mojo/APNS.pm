@@ -32,6 +32,11 @@ This module does not support password protected SSL keys.
     badge => 2,
   );
 
+  $apns->on(feedback => sub {
+    my($apns, $feedback) = @_;
+    warn "$feedback->{device} rejected push at $feedback->{ts}";
+  });
+
   $apns->ioloop->start;
 
 =cut
@@ -40,6 +45,7 @@ use feature 'state';
 use Mojo::Base 'Mojo::EventEmitter';
 use Mojo::JSON;
 use Mojo::IOLoop;
+use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
 our $VERSION = '0.02';
@@ -58,13 +64,14 @@ Emitted once all messages have been sent to the server.
 
   $self->on(feedback => sub {
     my($self, $data) = @_;
+    # ...
   });
 
 This event is emitted once a device has rejected a notification. C<$data> is a
 hash-ref:
 
   {
-    ts => $epoch_timestamp,
+    ts => $rejected_epoch_timestamp,
     device => $device_token,
   }
 
@@ -118,24 +125,32 @@ sub on {
   my($self, $event, @args) = @_;
 
   if($event eq 'feedback' and !$self->{feedback_id}) {
-    $self->_connect(feedback => sub {
-      $_[1]->on(read => $self->_feedback_reader_cb);
-    });
+    $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
   }
 
   $self->SUPER::on($event => @args);
 }
 
-sub _feedback_reader_cb {
+sub _connected_to_feedback_deamon_cb {
   my $self = shift;
-  my $buffer = '';
-  my($ts, $device);
+  my($bytes, $ts, $device) = ('');
 
   sub {
-    $buffer .= $_[1];
-    ($ts, $device, $buffer) = unpack 'N n/a a*', $buffer;
-    warn "[APNS:$device] >>> $ts\n" if DEBUG;
-    $self->emit(feedback => { ts => $ts, device => $device });
+    my($self, $stream) = @_;
+    Scalar::Util::weaken($self);
+    $stream->timeout(0);
+    $stream->on(close => sub {
+      $stream->reactor->timer(FEEDBACK_RECONNECT_TIMEOUT, sub {
+        $self or return;
+        $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
+      });
+    });
+    $stream->on(read => sub {
+      $bytes .= $_[1];
+      ($ts, $device, $bytes) = unpack 'N n/a a*', $bytes;
+      warn "[APNS:$device] >>> $ts\n" if DEBUG;
+      $self->emit(feedback => { ts => $ts, device => $device });
+    });
   };
 }
 
