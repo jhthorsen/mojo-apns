@@ -2,7 +2,7 @@ NAME
     Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 VERSION
-    0.02
+    0.03
 
 DESCRIPTION
     This module provides an API for sending messages to an iPhone using
@@ -26,6 +26,11 @@ SYNOPSIS
         badge => 2,
       );
 
+      $apns->on(feedback => sub {
+        my($apns, $feedback) = @_;
+        warn "$feedback->{device} rejected push at $feedback->{ts}";
+      });
+
       $apns->ioloop->start;
 
 EVENTS
@@ -38,13 +43,14 @@ EVENTS
   feedback
       $self->on(feedback => sub {
         my($self, $data) = @_;
+        # ...
       });
 
     This event is emitted once a device has rejected a notification. $data
     is a hash-ref:
 
       {
-        ts => $epoch_timestamp,
+        ts => $rejected_epoch_timestamp,
         device => $device_token,
       }
 
