@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.04
+       * Change default value for "sandbox" attribute
+
 0.03     Fri Jun 14 08:46:02 2013
        * Add support for listening to feedback from APNS
 

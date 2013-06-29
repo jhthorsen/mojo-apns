@@ -22,7 +22,7 @@ This module does not support password protected SSL keys.
   my $apns = Mojo::APNS->new(
               key => '/path/to/apns-dev-key.pem',
               cert => '/path/to/apns-dev-cert.pem',
-              sandbox => 1,
+              sandbox => 0,
             );
 
   $apns->on(drain => sub { $apns->loop->stop; })
@@ -90,8 +90,8 @@ Path to apple SSL key.
 
 =head2 sandbox
 
-Booleand true for talking with "gateway.sandbox.push.apple.com". Default is to
-use "gateway.push.apple.com"
+Booleand true for talking with "gateway.sandbox.push.apple.com" instead of
+"gateway.push.apple.com". Default is true.
 
 =head2 ioloop
 
@@ -101,7 +101,7 @@ Holds a L<Mojo::IOLoop> object.
 
 has key => '';
 has cert => '';
-has sandbox => 0;
+has sandbox => 1;
 
 has ioloop => sub { Mojo::IOLoop->singleton };
 has _feedback_port => 2196;
