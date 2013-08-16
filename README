@@ -2,7 +2,7 @@ NAME
     Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 VERSION
-    0.03
+    0.04
 
 DESCRIPTION
     This module provides an API for sending messages to an iPhone using
@@ -16,7 +16,7 @@ SYNOPSIS
       my $apns = Mojo::APNS->new(
                   key => '/path/to/apns-dev-key.pem',
                   cert => '/path/to/apns-dev-cert.pem',
-                  sandbox => 1,
+                  sandbox => 0,
                 );
 
       $apns->on(drain => sub { $apns->loop->stop; })
@@ -66,8 +66,8 @@ ATTRIBUTES
     Path to apple SSL key.
 
   sandbox
-    Booleand true for talking with "gateway.sandbox.push.apple.com". Default
-    is to use "gateway.push.apple.com"
+    Booleand true for talking with "gateway.sandbox.push.apple.com" instead
+    of "gateway.push.apple.com". Default is true.
 
   ioloop
     Holds a Mojo::IOLoop object.

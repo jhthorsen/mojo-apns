@@ -1,7 +1,8 @@
 Revision history for Mojo-APNS
 
-0.04
+0.04     Fri Aug 16 23:23:59 2013
        * Change default value for "sandbox" attribute
+       * Fix NAME in Makefile.PL
 
 0.03     Fri Jun 14 08:46:02 2013
        * Add support for listening to feedback from APNS
