@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.0401   Mon Aug 26 23:16:28 2013
+       * IO::Socket::SSL 1.75 required for TLS support
+
 0.04     Fri Aug 16 23:23:59 2013
        * Change default value for "sandbox" attribute
        * Fix NAME in Makefile.PL
