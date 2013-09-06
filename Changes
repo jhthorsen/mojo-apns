@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.0402   Fri Sep  6 23:38:16 2013
+       * Fix Makefile.PL
+
 0.0401   Mon Aug 26 23:16:28 2013
        * IO::Socket::SSL 1.75 required for TLS support
 
