@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.0403   Wed Nov 20 11:54:56 2013
+       * Fix RT#89150: MYMETA.{yml,json} must not be bundled
+
 0.0402   Fri Sep  6 23:38:16 2013
        * Fix Makefile.PL
 
