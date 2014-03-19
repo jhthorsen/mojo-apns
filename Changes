@@ -1,5 +1,8 @@
 Revision history for Mojo-APNS
 
+0.0404   Wed Mar 19 14:13:14 2014
+       * Add not about segfault
+
 0.0403   Wed Nov 20 11:54:56 2013
        * Fix RT#89150: MYMETA.{yml,json} must not be bundled
 

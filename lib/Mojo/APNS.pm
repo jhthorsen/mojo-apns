@@ -6,7 +6,7 @@ Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 =head1 VERSION
 
-0.0403
+0.0404
 
 =head1 DESCRIPTION
 
@@ -14,6 +14,8 @@ This module provides an API for sending messages to an iPhone using Apple Push
 Notification Service.
 
 This module does not support password protected SSL keys.
+
+NOTE! If this module will segfault if you swap L</key> and L</cert> around.
 
 =head1 SYNOPSIS
 
@@ -48,7 +50,7 @@ use Mojo::IOLoop;
 use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
-our $VERSION = '0.0403';
+our $VERSION = '0.0404';
 
 =head1 EVENTS
 
