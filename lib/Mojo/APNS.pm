@@ -15,7 +15,7 @@ Notification Service.
 
 This module does not support password protected SSL keys.
 
-NOTE! If this module will segfault if you swap L</key> and L</cert> around.
+NOTE! This module will segfault if you swap L</key> and L</cert> around.
 
 =head1 SYNOPSIS
 
