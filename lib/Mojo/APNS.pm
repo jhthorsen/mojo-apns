@@ -6,7 +6,7 @@ Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 =head1 VERSION
 
-0.0405
+0.0201
 
 =head1 DESCRIPTION
 
@@ -50,7 +50,7 @@ use Mojo::IOLoop;
 use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
-our $VERSION = '0.0405';
+our $VERSION = '0.0201';
 
 =head1 EVENTS
 
@@ -101,15 +101,15 @@ Holds a L<Mojo::IOLoop> object.
 
 =cut
 
-has key => '';
-has cert => '';
+has key     => '';
+has cert    => '';
 has sandbox => 1;
 
 has ioloop => sub { Mojo::IOLoop->singleton };
-has _feedback_port => 2196;
-has _gateway_port => 2195;
+has _feedback_port   => 2196;
+has _gateway_port    => 2195;
 has _gateway_address => sub {
-  $_[0]->sandbox ? 'gateway.sandbox.push.apple.com' : 'gateway.push.apple.com'
+  $_[0]->sandbox ? 'gateway.sandbox.push.apple.com' : 'gateway.push.apple.com';
 };
 
 sub _json { state $json = Mojo::JSON->new }
@@ -124,9 +124,9 @@ the event is L</feedback>.
 =cut
 
 sub on {
-  my($self, $event, @args) = @_;
+  my ($self, $event, @args) = @_;
 
-  if($event eq 'feedback' and !$self->{feedback_id}) {
+  if ($event eq 'feedback' and !$self->{feedback_id}) {
     $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
   }
 
@@ -135,24 +135,31 @@ sub on {
 
 sub _connected_to_feedback_deamon_cb {
   my $self = shift;
-  my($bytes, $ts, $device) = ('');
+  my ($bytes, $ts, $device) = ('');
 
   sub {
-    my($self, $stream) = @_;
+    my ($self, $stream) = @_;
     Scalar::Util::weaken($self);
     $stream->timeout(0);
-    $stream->on(close => sub {
-      $stream->reactor->timer(FEEDBACK_RECONNECT_TIMEOUT, sub {
-        $self or return;
-        $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
-      });
-    });
-    $stream->on(read => sub {
-      $bytes .= $_[1];
-      ($ts, $device, $bytes) = unpack 'N n/a a*', $bytes;
-      warn "[APNS:$device] >>> $ts\n" if DEBUG;
-      $self->emit(feedback => { ts => $ts, device => $device });
-    });
+    $stream->on(
+      close => sub {
+        $stream->reactor->timer(
+          FEEDBACK_RECONNECT_TIMEOUT,
+          sub {
+            $self or return;
+            $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
+          }
+        );
+      }
+    );
+    $stream->on(
+      read => sub {
+        $bytes .= $_[1];
+        ($ts, $device, $bytes) = unpack 'N n/a a*', $bytes;
+        warn "[APNS:$device] >>> $ts\n" if DEBUG;
+        $self->emit(feedback => {ts => $ts, device => $device});
+      }
+    );
   };
 }
 
@@ -186,29 +193,26 @@ Default is "default".
 
 sub send {
   my $cb = ref $_[-1] eq 'CODE' ? pop : \&_default_handler;
-  my($self, $device_token, $message, %args) = @_;
+  my ($self, $device_token, $message, %args) = @_;
   my $data = {};
 
-  $data->{aps} = {
-    alert => $message,
-    badge => int(delete $args{badge} || 0),
-  };
+  $data->{aps} = {alert => $message, badge => int(delete $args{badge} || 0),};
 
-  if(length(my $sound = delete $args{sound})) {
+  if (length(my $sound = delete $args{sound})) {
     $data->{aps}{sound} = $sound;
   }
 
-  if(length(my $content_available = delete $args{content_available})) {
+  if (length(my $content_available = delete $args{content_available})) {
     $data->{aps}{'content-available'} = $content_available;
   }
 
-  if(%args) {
+  if (%args) {
     $data->{custom} = \%args;
   }
 
   $message = $self->_json->encode($data);
 
-  if(length $message > 256) {
+  if (length $message > 256) {
     my $length = length $message;
     return $self->$cb("Too long message ($length)");
   }
@@ -217,44 +221,37 @@ sub send {
   warn "[APNS:$device_token] <<< $message\n" if DEBUG;
 
   $self->once(drain => sub { $self->$cb('') });
-  $self->_write([
-    chr(0),
-    pack('n', 32),
-    pack('H*', $device_token),
-    pack('n', length $message),
-    $message,
-  ]);
+  $self->_write([chr(0), pack('n', 32), pack('H*', $device_token), pack('n', length $message), $message,]);
 }
 
 sub _connect {
-  my($self, $type, $cb) = @_;
+  my ($self, $type, $cb) = @_;
   my $port = $type eq 'gateway' ? $self->_gateway_port : $self->_feedback_port;
 
-  if(DEBUG) {
+  if (DEBUG) {
     my $key = join ':', $self->_gateway_address, $port;
     warn "[APNS:$key] <<< cert=@{[$self->cert]}\n" if DEBUG;
-    warn "[APNS:$key] <<< key=@{[$self->key]}\n" if DEBUG;
+    warn "[APNS:$key] <<< key=@{[$self->key]}\n"   if DEBUG;
   }
 
   Scalar::Util::weaken($self);
-  $self->{"${type}_stream_id"}
-    ||= $self->ioloop->client(
-        address => $self->_gateway_address,
-        port => $port,
-        tls => 1,
-        tls_cert => $self->cert,
-        tls_key => $self->key,
-        sub {
-          my($ioloop, $error, $stream) = @_;
+  $self->{"${type}_stream_id"} ||= $self->ioloop->client(
+    address  => $self->_gateway_address,
+    port     => $port,
+    tls      => 1,
+    tls_cert => $self->cert,
+    tls_key  => $self->key,
+    sub {
+      my ($ioloop, $error, $stream) = @_;
 
-          $error and return $self->emit(error => "$type: $error");
-          $stream->on(close => sub { delete $self->{"${type}_stream_id"} });
-          $stream->on(error => sub { $self->emit(error => "$type: $_[1]") });
-          $stream->on(drain => sub { $self->emit('drain'); });
-          $stream->on(timeout => sub { delete $self->{"${type}_stream_id"} });
-          $self->$cb($stream);
-        },
-      );
+      $error and return $self->emit(error => "$type: $error");
+      $stream->on(close   => sub { delete $self->{"${type}_stream_id"} });
+      $stream->on(error   => sub { $self->emit(error => "$type: $_[1]") });
+      $stream->on(drain   => sub { $self->emit('drain'); });
+      $stream->on(timeout => sub { delete $self->{"${type}_stream_id"} });
+      $self->$cb($stream);
+    },
+  );
 }
 
 sub _default_handler {
@@ -267,15 +264,17 @@ sub _write {
   my $stream;
 
   unless ($id) {
-    push @{ $self->{messages} }, $message;
-    $self->_connect(gateway => sub {
-      my $self = shift;
-      $self->_write($_) for @{ delete($self->{messages}) || [] };
-    });
+    push @{$self->{messages}}, $message;
+    $self->_connect(
+      gateway => sub {
+        my $self = shift;
+        $self->_write($_) for @{delete($self->{messages}) || []};
+      }
+    );
     return $self;
   }
   unless ($stream = $self->ioloop->stream($id)) {
-    push @{ $self->{messages} }, $message;
+    push @{$self->{messages}}, $message;
     return $self;
   }
 
@@ -287,10 +286,10 @@ sub DESTROY {
   my $self = shift;
   my $ioloop = $self->ioloop or return;
 
-  if(my $id = $self->{gateway_id}) {
+  if (my $id = $self->{gateway_id}) {
     $ioloop->remove($id);
   }
-  if(my $id = $self->{feedback_id}) {
+  if (my $id = $self->{feedback_id}) {
     $ioloop->remove($id);
   }
 }

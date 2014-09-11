@@ -2,7 +2,7 @@ NAME
     Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 VERSION
-    0.0405
+    0.0201
 
 DESCRIPTION
     This module provides an API for sending messages to an iPhone using
@@ -10,7 +10,7 @@ DESCRIPTION
 
     This module does not support password protected SSL keys.
 
-    NOTE! If this module will segfault if you swap "key" and "cert" around.
+    NOTE! This module will segfault if you swap "key" and "cert" around.
 
 SYNOPSIS
       use Mojo::APNS;
@@ -98,16 +98,8 @@ METHODS
 
         Default is "default".
 
-    *   content_available
-
-        Enables background fetch.
-
     *   Custom arguments
-
-        Extraneous arguments will be placed in the "custom" hashref.
 
 AUTHOR
     Jan Henning Thorsen - "jhthorsen@cpan.org"
 
-CONTRIBUTORS
-    Glen Hinkle - tempire
