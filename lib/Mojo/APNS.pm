@@ -296,6 +296,8 @@ sub DESTROY {
 
 =head1 AUTHOR
 
+Glen Hinkle - C<tempire@cpan.org>
+
 Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
 =cut
