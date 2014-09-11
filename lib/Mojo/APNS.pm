@@ -229,7 +229,6 @@ sub send {
 sub _connect {
   my($self, $type, $cb) = @_;
   my $port = $type eq 'gateway' ? $self->_gateway_port : $self->_feedback_port;
-  my @cleanup = map { "${type}_$_" } qw/ id stream /;
 
   if(DEBUG) {
     my $key = join ':', $self->_gateway_address, $port;
@@ -238,7 +237,7 @@ sub _connect {
   }
 
   Scalar::Util::weaken($self);
-  $self->{$cleanup[0]}
+  $self->{"${type}_stream_id"}
     ||= $self->ioloop->client(
         address => $self->_gateway_address,
         port => $port,
@@ -249,11 +248,10 @@ sub _connect {
           my($ioloop, $error, $stream) = @_;
 
           $error and return $self->emit(error => "$type: $error");
-          $self->{$cleanup[1]} = $stream;
-          $stream->on(close => sub { delete $self->{$_} for @cleanup });
+          $stream->on(close => sub { delete $self->{"${type}_stream_id"} });
           $stream->on(error => sub { $self->emit(error => "$type: $_[1]") });
           $stream->on(drain => sub { $self->emit('drain'); });
-          $stream->on(timeout => sub { delete $self->{$_} for @cleanup });
+          $stream->on(timeout => sub { delete $self->{"${type}_stream_id"} });
           $self->$cb($stream);
         },
       );
@@ -264,15 +262,24 @@ sub _default_handler {
 }
 
 sub _write {
-  my($self, $message) = @_;
+  my ($self, $message) = @_;
+  my $id = $self->{gateway_stream_id};
+  my $stream;
 
-  if($self->{gateway_stream}) {
-    $self->{gateway_stream}->write(join '', @$message);
+  unless ($id) {
+    push @{ $self->{messages} }, $message;
+    $self->_connect(gateway => sub {
+      my $self = shift;
+      $self->_write($_) for @{ delete($self->{messages}) || [] };
+    });
+    return $self;
   }
-  else {
-    $self->_connect(gateway => sub { shift->_write($message) }) unless $self->{gateway_id};
+  unless ($stream = $self->ioloop->stream($id)) {
+    push @{ $self->{messages} }, $message;
+    return $self;
   }
 
+  $stream->write(join '', @$message);
   $self;
 }
 
