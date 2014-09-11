@@ -1,6 +1,6 @@
 Revision history for Mojo-APNS
 
-0.0405   Thu Sep 11 14:13:14 2014
+0.05
        * Added content-available, fixed ->generate_port
 
 0.0404   Wed Mar 19 14:13:14 2014
