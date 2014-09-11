@@ -7,7 +7,7 @@ use File::Basename;
 use Mojo::IOLoop::Stream;
 
 my $dir = dirname $INC{'Mojo/IOLoop/Stream.pm'};
-my $port = Mojo::IOLoop->generate_port;
+my $port = Mojo::IOLoop::Server->generate_port;
 my $message;
 
 plan skip_all => 'Could not find Mojo cert' unless -e "$dir/server.crt";

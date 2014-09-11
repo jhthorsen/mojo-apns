@@ -6,7 +6,7 @@ Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 =head1 VERSION
 
-0.0404
+0.0405
 
 =head1 DESCRIPTION
 
@@ -50,7 +50,7 @@ use Mojo::IOLoop;
 use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
-our $VERSION = '0.0404';
+our $VERSION = '0.0405';
 
 =head1 EVENTS
 
@@ -197,6 +197,11 @@ sub send {
   if(length(my $sound = delete $args{sound})) {
     $data->{aps}{sound} = $sound;
   }
+
+  if(length(my $content_available = delete $args{content_available})) {
+    $data->{aps}{'content-available'} = $content_available;
+  }
+
   if(%args) {
     $data->{custom} = \%args;
   }
