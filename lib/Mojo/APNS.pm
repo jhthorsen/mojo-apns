@@ -198,12 +198,12 @@ sub send {
 
   $data->{aps} = {alert => $message, badge => int(delete $args{badge} || 0),};
 
-  if (length(my $sound = delete $args{sound})) {
-    $data->{aps}{sound} = $sound;
+  if (defined(my $sound = delete $args{sound})) {
+    $data->{aps}{sound} = $sound if length $sound;
   }
 
-  if (length(my $content_available = delete $args{content_available})) {
-    $data->{aps}{'content-available'} = $content_available;
+  if (defined(my $content_available = delete $args{content_available})) {
+    $data->{aps}{'content-available'} = $content_available if length $content_available;
   }
 
   if (%args) {
