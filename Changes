@@ -1,5 +1,10 @@
 Revision history for Mojo-APNS
 
+0.06     Fri Jan  2 12:51:25 2015
+       * Avoid length of undefined values #6
+       * IO::Socket::SSL 1.84 required #5
+       * Use encode_json instead of OO Mojo::JSON #4
+
 0.05     Thu Sep 11 23:55:17 2014
        * Add support for "content-available"
        * Fix generate_port()
