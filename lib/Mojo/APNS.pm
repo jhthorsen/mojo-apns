@@ -45,7 +45,7 @@ NOTE! This module will segfault if you swap L</key> and L</cert> around.
 
 use feature 'state';
 use Mojo::Base 'Mojo::EventEmitter';
-use Mojo::JSON;
+use Mojo::JSON 'encode_json';
 use Mojo::IOLoop;
 use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
@@ -111,8 +111,6 @@ has _gateway_port    => 2195;
 has _gateway_address => sub {
   $_[0]->sandbox ? 'gateway.sandbox.push.apple.com' : 'gateway.push.apple.com';
 };
-
-sub _json { state $json = Mojo::JSON->new }
 
 =head1 METHODS
 
@@ -210,7 +208,7 @@ sub send {
     $data->{custom} = \%args;
   }
 
-  $message = $self->_json->encode($data);
+  $message = encode_json $data;
 
   if (length $message > 256) {
     my $length = length $message;
