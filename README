@@ -2,7 +2,7 @@ NAME
     Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 VERSION
-    0.06
+    0.07
 
 DESCRIPTION
     This module provides an API for sending messages to an iPhone using
