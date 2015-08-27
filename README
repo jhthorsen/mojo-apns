@@ -37,7 +37,7 @@ SYNOPSIS
 
 EVENTS
   error
-    Emitted when an error occur between client and server.
+    Emitted when an error occurs between client and server.
 
   drain
     Emitted once all messages have been sent to the server.
@@ -68,7 +68,7 @@ ATTRIBUTES
     Path to apple SSL key.
 
   sandbox
-    Booleand true for talking with "gateway.sandbox.push.apple.com" instead
+    Boolean true for talking with "gateway.sandbox.push.apple.com" instead
     of "gateway.push.apple.com". Default is true.
 
   ioloop
