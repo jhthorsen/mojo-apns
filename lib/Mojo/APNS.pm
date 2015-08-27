@@ -56,7 +56,7 @@ our $VERSION = '0.07';
 
 =head2 error
 
-Emitted when an error occur between client and server.
+Emitted when an error occurs between client and server.
 
 =head2 drain
 
@@ -92,7 +92,7 @@ Path to apple SSL key.
 
 =head2 sandbox
 
-Booleand true for talking with "gateway.sandbox.push.apple.com" instead of
+Boolean true for talking with "gateway.sandbox.push.apple.com" instead of
 "gateway.push.apple.com". Default is true.
 
 =head2 ioloop
