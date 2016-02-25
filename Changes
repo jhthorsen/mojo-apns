@@ -1,5 +1,8 @@
 Revision history for perl distribution Mojo-APNS
 
+0.08 Not Released
+ - Improved documentation and SYNOPSIS example
+
 0.07 2015-01-03T23:14:39Z
  - IO::Socket::SSL 1.84 required #5
 

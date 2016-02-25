@@ -110,9 +110,9 @@ sub _connect {
     tls_cert => $self->cert,
     tls_key  => $self->key,
     sub {
-      my ($ioloop, $error, $stream) = @_;
+      my ($ioloop, $err, $stream) = @_;
 
-      $error and return $self->emit(error => "$type: $error");
+      $err and return $self->emit(error => "$type: $err");
       $stream->on(close   => sub { delete $self->{"${type}_stream_id"} });
       $stream->on(error   => sub { $self->emit(error => "$type: $_[1]") });
       $stream->on(drain   => sub { $self->emit('drain'); });
@@ -153,13 +153,10 @@ sub _write {
 sub DESTROY {
   my $self = shift;
   my $ioloop = $self->ioloop or return;
+  my $id;
 
-  if (my $id = $self->{gateway_id}) {
-    $ioloop->remove($id);
-  }
-  if (my $id = $self->{feedback_id}) {
-    $ioloop->remove($id);
-  }
+  $ioloop->remove($id) if $id = $self->{gateway_id};
+  $ioloop->remove($id) if $id = $self->{feedback_id};
 }
 
 1;
@@ -185,50 +182,70 @@ NOTE! This module will segfault if you swap L</key> and L</cert> around.
 
 =head1 SYNOPSIS
 
+  use Mojolicious::Lite;
   use Mojo::APNS;
 
-  my $apns = Mojo::APNS->new(
-              key => '/path/to/apns-dev-key.pem',
-              cert => '/path/to/apns-dev-cert.pem',
-              sandbox => 0,
-            );
+  # set up a helper that holds the Mojo::APNS object
+  helper apns => sub {
+    state $apns
+      = Mojo::APNS->new(
+          cert    => "/path/to/apns-dev-cert.pem",
+          key     => "/path/to/apns-dev-key.pem",
+          sandbox => 0,
+        );
+  };
 
-  $apns->on(drain => sub { $apns->loop->stop });
-  $apns->send(
-    "c9d4a07c fbbc21d6 ef87a47d 53e16983 1096a5d5 faa15b75 56f59ddd a715dff4",
-    "New cool stuff!",
-    badge => 2,
+  # send a notification
+  post "/notify" => sub {
+    my $c         = shift;
+    my $device_id = "c9d4a07c fbbc21d6 ef87a47d 53e16983 1096a5d5 faa15b75 56f59ddd a715dff4";
+
+    $c->delay(
+      sub {
+        my ($delay) = @_;
+        $c->apns->send($device_id, "hey there!", $delay->begin);
+      },
+      sub {
+        my ($delay, $err) = @_;
+        return $c->reply->exception($err) if $err;
+        return $c->render(text => "Message was sent!");
+      }
+    );
+  };
+
+  # listen for feedback events
+  app->apns->on(
+    feedback => sub {
+      my ($apns, $feedback) = @_;
+      warn "$feedback->{device} rejected push at $feedback->{ts}";
+    }
   );
 
-  $apns->on(feedback => sub {
-    my($apns, $feedback) = @_;
-    warn "$feedback->{device} rejected push at $feedback->{ts}";
-  });
-
-  $apns->ioloop->start;
+  app->start;
 
 =head1 EVENTS
 
 =head2 error
 
+  $self->on(error => sub { my ($self, $err) = @_; });
+
 Emitted when an error occurs between client and server.
 
 =head2 drain
+
+  $self->on(drain => sub { my ($self) = @_; });
 
 Emitted once all messages have been sent to the server.
 
 =head2 feedback
 
-  $self->on(feedback => sub {
-    my($self, $data) = @_;
-    # ...
-  });
+  $self->on(feedback => sub { my ($self, $data) = @_; });
 
 This event is emitted once a device has rejected a notification. C<$data> is a
 hash-ref:
 
   {
-    ts => $rejected_epoch_timestamp,
+    ts     => $rejected_epoch_timestamp,
     device => $device_token,
   }
 
@@ -239,18 +256,30 @@ Apple's push notification server which will then send data to this callback.
 
 =head2 cert
 
+  $self = $self->cert("/path/to/apns-dev-cert.pem");
+  $path = $self->cert;
+
 Path to apple SSL certificate.
 
 =head2 key
+
+  $self = $self->key("/path/to/apns-dev-key.pem");
+  $path = $self->key;
 
 Path to apple SSL key.
 
 =head2 sandbox
 
+  $self = $self->sandbox(0);
+  $bool = $self->sandbox;
+
 Boolean true for talking with "gateway.sandbox.push.apple.com" instead of
 "gateway.push.apple.com". Default is true.
 
 =head2 ioloop
+
+  $self = $self->ioloop(Mojo::IOLoop->new);
+  $ioloop = $self->ioloop;
 
 Holds a L<Mojo::IOLoop> object.
 
@@ -264,14 +293,12 @@ the event is L</feedback>.
 =head2 send
 
   $self->send($device, $message, %args);
-  $self->send($device, $message, %args, $cb);
+  $self->send($device, $message, %args, sub { my ($self, $err) = @_; });
 
 Will send a C<$message> to the C<$device>. C<%args> is optional, but can contain:
 
 C<$cb> will be called when the messsage has been sent or if it could not be
-sent. C<$error> will be false on success.
-
-    $cb->($self, $error);
+sent. C<$err> will be false on success.
 
 =over 4
 
