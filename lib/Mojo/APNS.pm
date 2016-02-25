@@ -193,7 +193,7 @@ NOTE! This module will segfault if you swap L</key> and L</cert> around.
               sandbox => 0,
             );
 
-  $apns->on(drain => sub { $apns->loop->stop; })
+  $apns->on(drain => sub { $apns->loop->stop });
   $apns->send(
     "c9d4a07c fbbc21d6 ef87a47d 53e16983 1096a5d5 faa15b75 56f59ddd a715dff4",
     "New cool stuff!",
