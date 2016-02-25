@@ -1,41 +1,41 @@
-Revision history for Mojo-APNS
+Revision history for perl distribution Mojo-APNS
 
-0.07     Sat Jan  3 23:14:39 2015
-       * IO::Socket::SSL 1.84 required #5
+0.07 2015-01-03T23:14:39Z
+ - IO::Socket::SSL 1.84 required #5
 
-0.06     Fri Jan  2 12:51:25 2015
-       * Avoid length of undefined values #6
-       * Use encode_json instead of OO Mojo::JSON #4
+0.06 2015-01-02T12:51:25Z
+ - Avoid length of undefined values #6
+ - Use encode_json instead of OO Mojo::JSON #4
 
-0.05     Thu Sep 11 23:55:17 2014
-       * Add support for "content-available"
-       * Fix generate_port()
+0.05 2014-09-11T23:55:17Z
+ - Add support for "content-available"
+ - Fix generate_port()
 
-0.0404   Wed Mar 19 14:13:14 2014
-       * Add not about segfault
+0.0404 2014-03-19T14:13:14Z
+ - Add not about segfault
 
-0.0403   Wed Nov 20 11:54:56 2013
-       * Fix RT#89150: MYMETA.{yml,json} must not be bundled
+0.0403 2013-11-20T11:54:56Z
+ - Fix RT#89150: MYMETA.{yml,json} must not be bundled
 
-0.0402   Fri Sep  6 23:38:16 2013
-       * Fix Makefile.PL
+0.0402 2013-09-06T23:38:16Z
+ - Fix Makefile.PL
 
-0.0401   Mon Aug 26 23:16:28 2013
-       * IO::Socket::SSL 1.75 required for TLS support
+0.0401 2013-08-26T23:16:28Z
+ - IO::Socket::SSL 1.75 required for TLS support
 
-0.04     Fri Aug 16 23:23:59 2013
-       * Change default value for "sandbox" attribute
-       * Fix NAME in Makefile.PL
+0.04 2013-08-16T23:23:59Z
+ - Change default value for "sandbox" attribute
+ - Fix NAME in Makefile.PL
 
-0.03     Fri Jun 14 08:46:02 2013
-       * Add support for listening to feedback from APNS
+0.03 2013-06-14T08:46:02Z
+ - Add support for listening to feedback from APNS
 
-0.0201   Thu Sep 11 23:48:44 2014
-       * Fix Use of uninitialized value in concatenation
-       * Fix clearing client_id stream on timeout
+0.0201 2014-09-11T23:48:44Z
+ - Fix Use of uninitialized value in concatenation
+ - Fix clearing client_id stream on timeout
 
-0.02     Tue Jun 11 08:10:19 2013
-       * Fix errors from send() can be received in callback
+0.02 2013-06-11T08:10:19Z
+ - Fix errors from send() can be received in callback
 
-0.01     Mon Jun 10 22:25:44 2013
-       * Can send() messages to APNS
+0.01 2013-06-10T22:25:44Z
+ - Can send() messages to APNS
