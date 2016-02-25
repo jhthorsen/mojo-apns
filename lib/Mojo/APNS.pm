@@ -64,7 +64,7 @@ sub send {
   my ($self, $device_token, $message, %args) = @_;
   my $data = {};
 
-  $data->{aps} = {alert => $message, badge => int(delete $args{badge} || 0),};
+  $data->{aps} = {alert => $message, badge => int(delete $args{badge} || 0)};
 
   if (defined(my $sound = delete $args{sound})) {
     $data->{aps}{sound} = $sound if length $sound;
@@ -89,7 +89,7 @@ sub send {
   warn "[APNS:$device_token] <<< $message\n" if DEBUG;
 
   $self->once(drain => sub { $self->$cb('') });
-  $self->_write([chr(0), pack('n', 32), pack('H*', $device_token), pack('n', length $message), $message,]);
+  $self->_write([chr(0), pack('n', 32), pack('H*', $device_token), pack('n', length $message), $message]);
 }
 
 sub _connect {
@@ -182,6 +182,8 @@ NOTE! This module will segfault if you swap L</key> and L</cert> around.
 
 =head1 SYNOPSIS
 
+=head2 Mojolicious
+
   use Mojolicious::Lite;
   use Mojo::APNS;
 
@@ -222,6 +224,21 @@ NOTE! This module will segfault if you swap L</key> and L</cert> around.
   );
 
   app->start;
+
+=head2 Script
+
+  use Mojo::Base -strict;
+  use Mojo::APNS;
+
+  my $device_id = shift @ARGV;
+  my $apns = Mojo::APNS->new(
+    cert    => "/path/to/apns-dev-cert.pem",
+    key     => "/path/to/apns-dev-key.pem",
+    sandbox => 0,
+  );
+
+  # Emulate a blocking request with Mojo::IOLoop->start() and stop()
+  $apns->send($device_id, "Hey there!", sub { shift->ioloop->stop })->ioloop->start;
 
 =head1 EVENTS
 
