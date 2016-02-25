@@ -7,7 +7,7 @@ use Data::Dumper ();
 use File::Basename;
 use Test::More;
 
-my $dir  = dirname $INC{'Mojo/IOLoop/Stream.pm'};
+my $dir = File::Spec->catdir(dirname($INC{'Mojo/IOLoop/Stream.pm'}), 'resources');
 my $port = Mojo::IOLoop::Server->generate_port;
 my ($err, @messages);
 

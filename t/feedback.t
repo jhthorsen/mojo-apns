@@ -5,7 +5,7 @@ use Test::More;
 use File::Basename;
 use Mojo::IOLoop::Stream;
 
-my $dir  = dirname $INC{'Mojo/IOLoop/Stream.pm'};
+my $dir = File::Spec->catdir(dirname($INC{'Mojo/IOLoop/Stream.pm'}), 'resources');
 my $port = Mojo::IOLoop::Server->generate_port;
 my $message;
 
