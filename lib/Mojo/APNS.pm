@@ -6,7 +6,7 @@ use Mojo::IOLoop;
 use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
-our $VERSION = '0.07';
+our $VERSION = '1.00';
 
 has key     => '';
 has cert    => '';
@@ -169,7 +169,7 @@ Mojo::APNS - Apple Push Notification Service for Mojolicious
 
 =head1 VERSION
 
-0.07
+1.00
 
 =head1 DESCRIPTION
 
