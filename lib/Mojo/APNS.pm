@@ -29,36 +29,6 @@ sub on {
   $self->SUPER::on($event => @args);
 }
 
-sub _connected_to_feedback_deamon_cb {
-  my $self = shift;
-  my ($bytes, $ts, $device) = ('');
-
-  sub {
-    my ($self, $stream) = @_;
-    Scalar::Util::weaken($self);
-    $stream->timeout(0);
-    $stream->on(
-      close => sub {
-        $stream->reactor->timer(
-          FEEDBACK_RECONNECT_TIMEOUT,
-          sub {
-            $self or return;
-            $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
-          }
-        );
-      }
-    );
-    $stream->on(
-      read => sub {
-        $bytes .= $_[1];
-        ($ts, $device, $bytes) = unpack 'N n/a a*', $bytes;
-        warn "[APNS:$device] >>> $ts\n" if DEBUG;
-        $self->emit(feedback => {ts => $ts, device => $device});
-      }
-    );
-  };
-}
-
 sub send {
   my $cb = ref $_[-1] eq 'CODE' ? pop : \&_default_handler;
   my ($self, $device_token, $message, %args) = @_;
@@ -120,6 +90,36 @@ sub _connect {
       $self->$cb($stream);
     },
   );
+}
+
+sub _connected_to_feedback_deamon_cb {
+  my $self = shift;
+  my ($bytes, $ts, $device) = ('');
+
+  sub {
+    my ($self, $stream) = @_;
+    Scalar::Util::weaken($self);
+    $stream->timeout(0);
+    $stream->on(
+      close => sub {
+        $stream->reactor->timer(
+          FEEDBACK_RECONNECT_TIMEOUT,
+          sub {
+            $self or return;
+            $self->_connect(feedback => $self->_connected_to_feedback_deamon_cb);
+          }
+        );
+      }
+    );
+    $stream->on(
+      read => sub {
+        $bytes .= $_[1];
+        ($ts, $device, $bytes) = unpack 'N n/a a*', $bytes;
+        warn "[APNS:$device] >>> $ts\n" if DEBUG;
+        $self->emit(feedback => {ts => $ts, device => $device});
+      }
+    );
+  };
 }
 
 sub _default_handler {
