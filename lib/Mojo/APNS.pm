@@ -1,8 +1,11 @@
 package Mojo::APNS;
-use feature 'state';
 use Mojo::Base 'Mojo::EventEmitter';
+
+use feature 'state';
 use Mojo::JSON 'encode_json';
 use Mojo::IOLoop;
+use Mojo::Promise;
+
 use constant FEEDBACK_RECONNECT_TIMEOUT => 5;
 use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
@@ -12,7 +15,7 @@ has key     => '';
 has cert    => '';
 has sandbox => 1;
 
-has ioloop => sub { Mojo::IOLoop->singleton };
+has ioloop           => sub { Mojo::IOLoop->singleton };
 has _feedback_port   => 2196;
 has _gateway_port    => 2195;
 has _gateway_address => sub {
@@ -31,7 +34,14 @@ sub on {
 
 sub send {
   my $cb = ref $_[-1] eq 'CODE' ? pop : \&_default_handler;
+  my $self = shift;
+  $self->send_p(@_)->finally(sub { $self->$cb(shift || '') });
+  $self;
+}
+
+sub send_p {
   my ($self, $device_token, $message, %args) = @_;
+  my $p    = Mojo::Promise->new;
   my $data = {};
 
   $data->{aps} = {alert => $message, badge => int(delete $args{badge} || 0)};
@@ -44,22 +54,22 @@ sub send {
     $data->{aps}{'content-available'} = $content_available if length $content_available;
   }
 
-  if (%args) {
-    $data->{custom} = \%args;
-  }
-
+  $data->{custom} = \%args if %args;
   $message = encode_json $data;
 
   if (length $message > 256) {
     my $length = length $message;
-    return $self->$cb("Too long message ($length)");
+    $p->reject("Too long message ($length)");
+    return $p;
   }
 
   $device_token =~ s/\s//g;
   warn "[APNS:$device_token] <<< $message\n" if DEBUG;
 
-  $self->once(drain => sub { $self->$cb('') });
+  $self->once(drain => sub { $p->resolve });
   $self->_write([chr(0), pack('n', 32), pack('H*', $device_token), pack('n', length $message), $message]);
+
+  return $p;
 }
 
 sub _connect {
@@ -217,17 +227,12 @@ NOTE! This module will segfault if you swap L</key> and L</cert> around.
     my $c         = shift;
     my $device_id = "c9d4a07c fbbc21d6 ef87a47d 53e16983 1096a5d5 faa15b75 56f59ddd a715dff4";
 
-    $c->delay(
-      sub {
-        my ($delay) = @_;
-        $c->apns->send($device_id, "hey there!", $delay->begin);
-      },
-      sub {
-        my ($delay, $err) = @_;
-        return $c->reply->exception($err) if $err;
-        return $c->render(text => "Message was sent!");
-      }
-    );
+    $c->apns
+      ->send_p($device_id, "hey there!", $delay->begin)
+      ->then(
+        sub { $c->render(text => "Message was sent!") },
+        sub { $c->reply->exception(shift); }
+      );
   };
 
   # listen for feedback events
@@ -330,6 +335,12 @@ Default is "default".
 =item * Custom arguments
 
 =back
+
+=head2 send_p
+
+  $promise = $self->send_p($device, $message, %args);
+
+L</send_p> takes the same arguments as L</send>, but returns a L<Mojo::Promise>.
 
 =head1 AUTHOR
 
