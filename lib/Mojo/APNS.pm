@@ -11,9 +11,10 @@ use constant DEBUG => $ENV{MOJO_APNS_DEBUG} ? 1 : 0;
 
 our $VERSION = '1.00';
 
-has key     => '';
-has cert    => '';
-has sandbox => 1;
+has key      => '';
+has cert     => '';
+has insecure => 0;
+has sandbox  => 1;
 
 has ioloop           => sub { Mojo::IOLoop->singleton };
 has _feedback_port   => 2196;
@@ -89,6 +90,7 @@ sub _connect {
     tls      => 1,
     tls_cert => $self->cert,
     tls_key  => $self->key,
+    $self->insecure ? (tls_verify => 0x00) : (),
     sub {
       my ($ioloop, $err, $stream) = @_;
 
@@ -289,6 +291,14 @@ Path to apple SSL certificate.
   $path = $self->key;
 
 Path to apple SSL key.
+
+=head2 insecure
+
+  $self = $self->insecure(1);
+  $bool = $self->insecure;
+
+Used if you want to send messages to an test server with an insecure TLS
+sertificate.
 
 =head2 sandbox
 
